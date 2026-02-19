@@ -122,7 +122,12 @@ cd gestion_escolar
 
 # 2. Crear entorno virtual
 python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
+
+# Windows
+venv\Scripts\activate  
+
+# Linux/Mac
+source venv/bin/activate
 
 # 3. Instalar dependencias
 pip install django
@@ -133,7 +138,7 @@ pip install django
 # 4. Aplicar migraciones
 python manage.py migrate
 
-# 5. Crear superusuario (OBLIGATORIO) ⚠️
+# 5. Crear superusuario (OBLIGATORIO)
 # La base de datos no se incluye por seguridad. Debes crear el admin.
 python manage.py createsuperuser
 
@@ -141,7 +146,7 @@ python manage.py createsuperuser
 python manage.py runserver
 ```
 
-Accede a: `http://127.0.0.1:8000`
+Accede a: [`http://127.0.0.1:8000`](http://127.0.0.1:8000)
 
 ---
 
