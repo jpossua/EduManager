@@ -1,0 +1,156 @@
+{% extends 'sistemas/base.html' %}
+<!--
+LISTA_MATERIAS.HTML - Gestión de Materias del profesor
+Datos: materias, form (MateriaForm vacío)
+Modales dinámicos: editarMateriaModal + id, eliminarMateriaModal + id
+alumno_set.count: Relación inversa M2M → cuenta alumnos por materia 
+-->
+
+{% block title %}Materias - EduManage{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold text-dark">Gestión de Materias</h2>
+        <p class="text-muted mb-0">{{ materias.count }} materias registradas</p>
+    </div>
+    <div class="d-flex gap-2">
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#crearMateriaModal"><i
+                class="bi bi-plus-lg"></i> Añadir Materia</button>
+    </div>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="bg-light">
+                <tr>
+                    <th class="ps-4">ID</th>
+                    <th>Materia</th>
+                    <th>Alumnos Inscritos</th>
+                    <th class="text-end pe-4">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for materia in materias %}
+                <tr>
+                    <td class="ps-4 text-muted fw-bold">#{{ forloop.counter }}</td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div class="rounded-circle bg-success bg-opacity-10 text-success d-flex align-items-center justify-content-center fw-bold me-3"
+                                style="width: 40px; height: 40px;">
+                                {{ materia.nombre|slice:":1"|upper }}
+                            </div>
+                            <div class="fw-bold text-dark">{{ materia.nombre }}</div>
+                        </div>
+                    </td>
+                    <td>
+                        <span
+                            class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill">{{materia.alumno_set.count}}
+                            alumnos</span>
+                    </td>
+                    <td class="text-end pe-4">
+                        <button class="btn btn-sm btn-link text-muted p-0 me-2" data-bs-toggle="modal"
+                            data-bs-target="#editarMateriaModal{{ materia.id }}"><i
+                                class="bi bi-pencil-square fs-5"></i></button>
+                        <button class="btn btn-sm btn-link text-danger p-0" data-bs-toggle="modal"
+                            data-bs-target="#eliminarMateriaModal{{ materia.id }}"><i
+                                class="bi bi-trash fs-5"></i></button>
+                    </td>
+                </tr>
+
+                <!-- Modal Editar Materia -->
+                <div class="modal fade" id="editarMateriaModal{{ materia.id }}" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title fw-bold">Editar Materia</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                    aria-label="Close"></button>
+                            </div>
+                            <form method="post" action="{% url 'editar_materia' materia.id %}">
+                                <div class="modal-body">
+                                    {% csrf_token %}
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted small fw-bold text-uppercase">Nombre de la
+                                            Materia</label>
+                                        <input type="text" name="nombre" value="{{ materia.nombre }}"
+                                            class="form-control" required>
+                                    </div>
+                                </div>
+                                <div class="modal-footer border-0">
+                                    <button type="button" class="btn btn-light"
+                                        data-bs-dismiss="modal">Cancelar</button>
+                                    <button type="submit" class="btn btn-primary fw-bold">Guardar Cambios</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal Eliminar Materia -->
+                <div class="modal fade" id="eliminarMateriaModal{{ materia.id }}" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header border-0">
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                    aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body text-center pb-5">
+                                <div class="text-danger mb-3"><i class="bi bi-exclamation-circle display-1"></i></div>
+                                <h4 class="fw-bold">¿Eliminar Materia?</h4>
+                                <p class="text-muted">Estás a punto de eliminar <span
+                                        class="fw-bold">{{materia.nombre}}</span>. Esta acción es irreversible.</p>
+                                <form method="post" action="{% url 'eliminar_materia' materia.id %}">
+                                    {% csrf_token %}
+                                    <button type="button" class="btn btn-light px-4"
+                                        data-bs-dismiss="modal">Cancelar</button>
+                                    <button type="submit" class="btn btn-danger px-4 fw-bold">Sí, Eliminar</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="text-center py-5">No has registrado ninguna materia aún.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal Crear Materia -->
+<div class="modal fade" id="crearMateriaModal" tabindex="-1" aria-labelledby="crearMateriaModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="crearMateriaModalLabel">Añadir Nueva Materia</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'crear_materia' %}">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    {% if form.errors %}
+                    <div class="alert alert-danger">
+                        <small>{{ form.errors }}</small>
+                    </div>
+                    {% endif %}
+
+                    <div class="mb-3">
+                        <label for="{{ form.nombre.id_for_label }}"
+                            class="form-label text-muted small fw-bold text-uppercase">Nombre de la Materia</label>
+                        {{ form.nombre }}
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary fw-bold">Guardar Materia</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

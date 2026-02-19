@@ -1,0 +1,120 @@
+{% extends 'sistemas/base.html' %}
+<!--
+{# =====================================================================
+EDITAR_ALUMNO.HTML - Formulario de edición de alumno
+=====================================================================
+Hereda de base.html. Muestra un formulario para editar los datos
+de un alumno existente (nombre, correo, materias).
+
+DATOS DISPONIBLES (desde views.py → editar_alumno()):
+alumno → Objeto Alumno que se está editando
+form → AlumnoForm con instance=alumno (datos precargados)
+
+DIFERENCIA CON CREAR:
+- En CREAR: El formulario está vacío y se envía a 'crear_alumno'
+- En EDITAR: El formulario viene precargado con los datos actuales
+gracias a instance=alumno en la vista
+
+VALIDACIÓN JAVASCRIPT:
+Antes de enviar, verifica que se haya seleccionado al menos
+una materia. Muestra un error visual si no hay ninguna marcada.
+===================================================================== #}
+-->
+{% block title %}Editar Alumno - EduManage{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white py-3">
+                <!-- Mostramos el nombre del alumno que se está editando -->
+                <h5 class="m-0 fw-bold">Editar Alumno: {{ alumno.nombre }}</h5>
+            </div>
+            <div class="card-body p-4">
+                <!-- El formulario se envía a la misma URL (editar_alumno con el ID) -->
+                <form method="post">
+                    {% csrf_token %}
+
+                    <!-- ================================================
+                         ERRORES DE VALIDACIÓN
+                         ================================================
+                         Si el formulario tiene errores (email duplicado, etc.),
+                         los mostramos todos en un bloque rojo.
+                         Doble for: 1° recorre los campos, 2° los errores de cada campo
+                    -->
+                    {% if form.errors %}
+                    <div class="alert alert-danger">
+                        {% for field, errors in form.errors.items %}
+                        {% for error in errors %}
+                        <small>{{ error }}</small><br>
+                        {% endfor %}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <!-- Campo: Nombre (precargado con el nombre actual) -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-muted small text-uppercase">Nombre Completo</label>
+                        {{ form.nombre }}
+                    </div>
+
+                    <!-- Campo: Correo electrónico -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-muted small text-uppercase">Correo Electrónico</label>
+                        {{ form.correo }}
+                    </div>
+
+                    <!-- Campo: Materias (checkboxes con scroll) -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-muted small text-uppercase">Materias Inscritas <span
+                                class="text-danger">*</span></label>
+                        <!-- Contenedor con scroll para cuando hay muchas materias -->
+                        <div class="card p-2 bg-light border-0" style="max-height: 200px; overflow-y: auto;"
+                            id="materiasContainerEditar">
+                            <!-- {{ form.materias }}: Renderiza checkboxes con las materias ya marcadas -->
+                            {{ form.materias }}
+                        </div>
+                        <div class="form-text small">Selecciona al menos una materia.</div>
+                        <!-- Mensaje de error oculto por defecto (d-none), mostrado por JavaScript -->
+                        <div class="text-danger small mt-1 d-none" id="errorMateriasEditar">¡Error, este campo es
+                            obligatorio!</div>
+                    </div>
+
+                    <!-- Botones de acción -->
+                    <div class="d-flex justify-content-end gap-2 mt-4">
+                        <a href="{% url 'lista_alumnos' %}" class="btn btn-light">Cancelar</a>
+                        <button type="submit" class="btn btn-primary fw-bold">Guardar Cambios</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================================================
+     VALIDACIÓN JAVASCRIPT - Materias obligatorias
+     ================================================
+     Verifica del lado del cliente que al menos una materia
+     esté seleccionada antes de enviar el formulario.
+     Si no hay ninguna marcada:
+       1. Previene el envío (e.preventDefault())
+       2. Muestra el mensaje de error
+       3. Añade borde rojo al contenedor
+-->
+<script>
+    document.querySelector('form[method="post"]').addEventListener('submit', function (e) {
+        // Buscamos todos los checkboxes de materias que estén marcados
+        var checks = this.querySelectorAll('input[name="materias"]:checked');
+        var errorDiv = document.getElementById('errorMateriasEditar');
+        var container = document.getElementById('materiasContainerEditar');
+        if (checks.length === 0) {
+            e.preventDefault(); // Detenemos el envío del formulario
+            errorDiv.classList.remove('d-none'); // Mostramos el error
+            container.classList.add('border', 'border-danger'); // Borde rojo
+        } else {
+            errorDiv.classList.add('d-none'); // Ocultamos el error
+            container.classList.remove('border', 'border-danger'); // Quitamos borde rojo
+        }
+    });
+</script>
+{% endblock %}

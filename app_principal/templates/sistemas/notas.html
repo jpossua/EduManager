@@ -1,0 +1,461 @@
+{% extends 'sistemas/base.html' %}
+<!--
+NOTAS.HTML - Página de calificaciones (la más compleja del sistema)
+
+SECCIONES:
+1. Formulario inline para crear nuevas calificaciones
+2. Tabla de actividades con modales de editar/eliminar
+3. Historial de calificaciones con filtro por alumno
+
+DATOS (desde views.py → registro_de_notas()):
+notas → Lista de calificaciones existentes
+alumnos → Alumnos del profesor
+actividades → Actividades del profesor
+form_nota → NotaForm para crear calificaciones
+form_actividad → ActividadForm para crear actividades
+actividad_materia_map → JSON: id_actividad: id_materia
+alumno_materias_map → JSON: id_alumno: [ids_materias]
+
+FILTROS JAVASCRIPT:
+- Filtro de historial: oculta/muestra filas según alumno seleccionado
+- Filtro dinámico: al elegir actividad, filtra alumnos de esa materia 
+-->
+
+{% block title %}Calificaciones - EduManage{% endblock %}
+
+{% block content %}
+<header class="mb-4 d-flex justify-content-between align-items-end">
+    <div>
+        <h2 class="fw-bold text-dark">Registro de Notas</h2>
+        <p class="text-muted mb-0">Gestiona el desempeño académico.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#crearActividadModal"><i
+                class="bi bi-plus-lg"></i> Nueva Actividad</button>
+    </div>
+</header>
+
+<!-- SECCIÓN 1: Formulario inline para crear nueva calificación -->
+<!-- Estilo "Fire Gradient": Gradiente lineal de dorado a rojo ladrillo para destacar la acción principal -->
+<div class="card mb-4 border-primary border-opacity-25">
+    <div class="card-header fw-bold border-0 py-3"
+        style="background: linear-gradient(to left, #f9e79f, #f1c40e, #e77e23, #d15400, #bf3a2b); color: white; text-shadow: 2px 2px 1px rgba(0, 0, 0, 0.5);">
+        <i class="bi bi-plus-circle-fill me-2" style="color: white;"></i> Nueva Calificación
+    </div>
+    <div class="card-body p-4">
+        <form method="post" class="row g-3 align-items-end">
+            {% csrf_token %}
+            {% if form_nota.errors %}
+            <div class="alert alert-danger">
+                <small>{{ form_nota.errors }}</small>
+            </div>
+            {% endif %}
+
+            <div class="col-md-4">
+                <label class="form-label fw-bold text-muted small text-uppercase">Actividad</label>
+                {{ form_nota.actividad }}
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label fw-bold text-muted small text-uppercase">Estudiante</label>
+                {{ form_nota.alumno }}
+            </div>
+
+
+            <div class="col-md-3">
+                <label class="form-label fw-bold text-muted small text-uppercase">Calificación</label>
+                {{ form_nota.nota }}
+            </div>
+
+            <div class="col-md-1">
+                <button type="submit" class="btn btn-primary w-100"><i class="bi bi-save"></i></button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- SECCIÓN 2: Tabla de actividades (exámenes, trabajos, prácticas) -->
+<div class="card mb-4">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h5 class="m-0 fw-bold">Mis Actividades</h5>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="bg-light">
+                <tr>
+                    <th class="ps-4">Fecha</th>
+                    <th>Actividad</th>
+                    <th>Materia</th>
+                    <th>Categoría</th>
+                    <th class="text-end pe-4">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for actividad in actividades %}
+                <tr>
+                    <td class="ps-4 text-muted small">{{ actividad.fecha|date:"d M, Y" }}</td>
+                    <td class="fw-bold text-dark">{{ actividad.nombre }}</td>
+                    <td>{{ actividad.materia.nombre }}</td>
+                    <td><span
+                            class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 rounded-2">{{actividad.get_categoria_display}}</span>
+                        <!-- get_categoria_display: Convierte 'EX' → 'Examen', 'TR' → 'Trabajo' etc. -->
+                    </td>
+                    <td class="text-end pe-4">
+                        <button class="btn btn-sm btn-link text-muted p-0 me-2" data-bs-toggle="modal"
+                            data-bs-target="#editarActividadModal{{ actividad.id }}"><i
+                                class="bi bi-pencil"></i></button>
+                        <button class="btn btn-sm btn-link text-danger p-0" data-bs-toggle="modal"
+                            data-bs-target="#eliminarActividadModal{{ actividad.id }}"><i
+                                class="bi bi-trash"></i></button>
+                    </td>
+                </tr>
+
+                <!-- Modal Editar Actividad -->
+                <div class="modal fade" id="editarActividadModal{{ actividad.id }}" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title fw-bold">Editar Actividad</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                    aria-label="Close"></button>
+                            </div>
+                            <form method="post" action="{% url 'editar_actividad' actividad.id %}">
+                                <div class="modal-body">
+                                    {% csrf_token %}
+
+                                    <!-- Campos manuales para simplificar, idealmente usar form rendering si es complejo -->
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted small fw-bold text-uppercase">Nombre</label>
+                                        <input type="text" name="nombre" class="form-control"
+                                            value="{{ actividad.nombre }}" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label
+                                            class="form-label text-muted small fw-bold text-uppercase">Materia</label>
+                                        <select name="materia" class="form-select" required>
+                                            {% for materia in form_actividad.materia.field.queryset %}
+                                            {% if materia.id == actividad.materia.id %}
+                                            <option value="{{ materia.id }}" selected>{{ materia.nombre }}</option>
+                                            {% else %}
+                                            <option value="{{ materia.id }}">{{ materia.nombre }}</option>
+                                            {% endif %}
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-6 mb-3">
+                                            <label
+                                                class="form-label text-muted small fw-bold text-uppercase">Categoría</label>
+                                            <select name="categoria" class="form-select" required>
+                                                {% for codigo, nombre in form_actividad.categoria.field.choices %}
+                                                {% if codigo == actividad.categoria %}
+                                                <option value="{{ codigo }}" selected>{{ nombre }}</option>
+                                                {% else %}
+                                                <option value="{{ codigo }}">{{ nombre }}</option>
+                                                {% endif %}
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="col-6 mb-3">
+                                            <label
+                                                class="form-label text-muted small fw-bold text-uppercase">Fecha</label>
+                                            <input type="date" name="fecha" class="form-control"
+                                                value="{{ actividad.fecha|date:'Y-m-d' }}" required>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="modal-footer border-0">
+                                    <button type="button" class="btn btn-light"
+                                        data-bs-dismiss="modal">Cancelar</button>
+                                    <button type="submit" class="btn btn-primary fw-bold">Guardar Cambios</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal Eliminar Actividad -->
+                <div class="modal fade" id="eliminarActividadModal{{ actividad.id }}" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header border-0">
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                    aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body text-center pb-5">
+                                <div class="text-danger mb-3"><i class="bi bi-exclamation-circle display-1"></i></div>
+                                <h4 class="fw-bold">¿Eliminar Actividad?</h4>
+                                <p class="text-muted">Estás a punto de eliminar <span
+                                        class="fw-bold">{{actividad.nombre}}</span>. <br><span
+                                        class="text-danger fw-bold">¡Cuidado! Se borrarán todas las notas
+                                        asociadas.</span></p>
+                                <form method="post" action="{% url 'eliminar_actividad' actividad.id %}">
+                                    {% csrf_token %}
+                                    <button type="button" class="btn btn-light px-4"
+                                        data-bs-dismiss="modal">Cancelar</button>
+                                    <button type="submit" class="btn btn-danger px-4 fw-bold">Sí, Eliminar</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="text-center py-4">No has creado actividades aún.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- SECCIÓN 3: Historial de calificaciones con filtro por alumno -->
+<div class="card">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h5 class="m-0 fw-bold">Historial Reciente</h5>
+        <div class="d-flex align-items-center gap-2">
+            <label class="form-label m-0 text-muted small fw-bold">Filtrar:</label>
+            <select id="filtroAlumno" class="form-select form-select-sm" style="width: 200px;">
+                <option value="">Todos los alumnos</option>
+                {% for alumno in alumnos %}
+                <option value="{{ alumno.nombre }}">{{ alumno.nombre }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0" id="tablaHistorial">
+            <thead class="bg-light">
+                <tr>
+                    <th class="ps-4">Fecha</th>
+                    <th>Categoría</th>
+                    <th>Actividad</th>
+                    <th>Alumno</th>
+                    <th>Nota</th>
+                    <th class="text-end pe-4">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for calificacion in notas %}
+                <tr data-alumno="{{ calificacion.alumno.nombre }}">
+                    <td class="ps-4 text-muted small">{{ calificacion.actividad.fecha|date:"d M, Y" }}</td>
+                    <td>
+                        {% if calificacion.actividad.categoria == 'EX' %}
+                        <span
+                            class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 rounded-2">Examen</span>
+                        {% elif calificacion.actividad.categoria == 'TR' %}
+                        <span
+                            class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 rounded-2">Trabajo</span>
+                        {% else %}
+                        <span
+                            class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 rounded-2">{{calificacion.actividad.get_categoria_display}}</span>
+                        {% endif %}
+                    </td>
+                    <td class="fw-bold text-dark">{{ calificacion.actividad.nombre }}</td>
+                    <td>{{ calificacion.alumno.nombre }}</td>
+                    <td>
+                        {% if calificacion.nota >= 5 %}
+                        <span class="fw-bold text-success">{{ calificacion.nota }}</span>
+                        {% else %}
+                        <span class="fw-bold text-danger">{{ calificacion.nota }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end pe-4">
+                        <button class="btn btn-sm btn-link text-muted p-0 me-2" data-bs-toggle="modal"
+                            data-bs-target="#editarNotaModal{{ calificacion.id }}"><i class="bi bi-pencil"></i></button>
+                        <button class="btn btn-sm btn-link text-danger p-0" data-bs-toggle="modal"
+                            data-bs-target="#eliminarNotaModal{{ calificacion.id }}"><i
+                                class="bi bi-trash"></i></button>
+                    </td>
+                </tr>
+
+                <!-- Modal Editar Nota -->
+                <div class="modal fade" id="editarNotaModal{{ calificacion.id }}" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title fw-bold">Editar Calificación</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                    aria-label="Close"></button>
+                            </div>
+                            <form method="post" action="{% url 'editar_nota' calificacion.id %}">
+                                <div class="modal-body">
+                                    {% csrf_token %}
+                                    <p class="mb-3">Editando nota de <span
+                                            class="fw-bold">{{calificacion.alumno.nombre}}</span> en <span
+                                            class="fw-bold">{{calificacion.actividad.nombre}}</span>.</p>
+
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted small fw-bold text-uppercase">Nueva
+                                            Nota</label>
+                                        <input type="number" name="nota" class="form-control"
+                                            value="{{ calificacion.nota|stringformat:'s' }}" min="0" max="10" step="0.1"
+                                            required>
+                                    </div>
+                                </div>
+                                <div class="modal-footer border-0">
+                                    <button type="button" class="btn btn-light"
+                                        data-bs-dismiss="modal">Cancelar</button>
+                                    <button type="submit" class="btn btn-primary fw-bold">Guardar Cambios</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal Eliminar Nota -->
+                <div class="modal fade" id="eliminarNotaModal{{ calificacion.id }}" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header border-0">
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                    aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body text-center pb-5">
+                                <div class="text-danger mb-3"><i class="bi bi-exclamation-circle display-1"></i></div>
+                                <h4 class="fw-bold">¿Eliminar Calificación?</h4>
+                                <p class="text-muted">Estás a punto de eliminar la nota de <span
+                                        class="fw-bold">{{calificacion.alumno.nombre}}</span>. Esta acción es
+                                    irreversible.</p>
+                                <form method="post" action="{% url 'eliminar_nota' calificacion.id %}">
+                                    {% csrf_token %}
+                                    <button type="button" class="btn btn-light px-4"
+                                        data-bs-dismiss="modal">Cancelar</button>
+                                    <button type="submit" class="btn btn-danger px-4 fw-bold">Sí, Eliminar</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center py-4">No hay calificaciones registradas.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal Crear Actividad -->
+<div class="modal fade" id="crearActividadModal" tabindex="-1" aria-labelledby="crearActividadModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="crearActividadModalLabel">Nueva Actividad</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'crear_actividad' %}">
+                <div class="modal-body">
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold text-uppercase">Materia</label>
+                        {{ form_actividad.materia }}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold text-uppercase">Nombre Actividad</label>
+                        {{ form_actividad.nombre }}
+                    </div>
+
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label class="form-label text-muted small fw-bold text-uppercase">Categoría</label>
+                            {{ form_actividad.categoria }}
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="form-label text-muted small fw-bold text-uppercase">Fecha</label>
+                            {{ form_actividad.fecha }}
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary fw-bold">Guardar Actividad</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- json_script: Filtro de Django que convierte datos Python a JSON seguro.
+     Crea un <script type="application/json"> con el ID especificado.
+     Esto permite pasar datos del servidor (Python) al cliente (JavaScript)
+     de forma segura, evitando inyección XSS. -->
+{{ actividad_materia_map|json_script:"actividadMateriaData" }}
+{{ alumno_materias_map|json_script:"alumnoMateriasData" }}
+
+<script>
+    // ============================================================
+    // FILTRO 1: Historial por Alumno
+    // ============================================================
+    // Cuando el profesor elige un alumno en el select, se ocultan
+    // las filas de la tabla que no correspondan a ese alumno.
+    // data-alumno en cada <tr> contiene el nombre del alumno.
+    document.getElementById('filtroAlumno').addEventListener('change', function () {
+        var filtro = this.value;
+        var filas = document.querySelectorAll('#tablaHistorial tbody tr[data-alumno]');
+        filas.forEach(function (fila) {
+            if (!filtro || fila.getAttribute('data-alumno') === filtro) {
+                fila.style.display = ''; // Mostrar
+            } else {
+                fila.style.display = 'none'; // Ocultar
+            }
+        });
+    });
+
+    // ============================================================
+    // FILTRO 2: Filtro dinámico alumno-actividad
+    // ============================================================
+    // Cuando el profesor elige una actividad en el formulario de
+    // nueva calificación, filtra los alumnos para mostrar SOLO
+    // los inscritos en la materia de esa actividad.
+    // Esto evita errores de validación en el servidor.
+    var actividadMateria = JSON.parse(document.getElementById('actividadMateriaData').textContent);
+    var alumnoMaterias = JSON.parse(document.getElementById('alumnoMateriasData').textContent);
+
+    var selectActividad = document.getElementById('id_actividad');
+    var selectAlumno = document.getElementById('id_alumno');
+
+    if (selectActividad && selectAlumno) {
+        var opcionesOriginales = Array.from(selectAlumno.options).map(function (opt) {
+            return { value: opt.value, text: opt.text };
+        });
+
+        selectActividad.addEventListener('change', function () {
+            var actId = this.value;
+            var materiaId = actividadMateria[actId];
+
+            selectAlumno.innerHTML = '';
+
+            opcionesOriginales.forEach(function (opt) {
+                if (!opt.value) {
+                    var option = document.createElement('option');
+                    option.value = '';
+                    option.text = opt.text;
+                    selectAlumno.appendChild(option);
+                    return;
+                }
+
+                if (!materiaId) {
+                    var option = document.createElement('option');
+                    option.value = opt.value;
+                    option.text = opt.text;
+                    selectAlumno.appendChild(option);
+                    return;
+                }
+
+                var materiasAlumno = alumnoMaterias[opt.value] || [];
+                if (materiasAlumno.includes(parseInt(materiaId))) {
+                    var option = document.createElement('option');
+                    option.value = opt.value;
+                    option.text = opt.text;
+                    selectAlumno.appendChild(option);
+                }
+            });
+        });
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,139 @@
+{% extends 'sistemas/base.html' %}
+<!--
+=====================================================================
+DASHBOARD.HTML - Página principal del profesor
+=====================================================================
+Hereda de base.html usando 'extends'.
+Solo define el contenido dentro de 'block content'.
+
+DATOS DISPONIBLES (desde views.py → dashboard()):
+user.username → Nombre del profesor logueado
+total_alumnos → Número total de alumnos (sin duplicados)
+materias → Lista de materias del profesor
+materias.count → Número de materias
+
+COMPONENTES:
+1. Tarjetas de resumen (Total Alumnos, Materias Activas)
+2. Tabla de materias con botón "Ver Alumnos"
+===================================================================== #}
+-->
+{% block title %}Dashboard - EduManage{% endblock %}
+
+{% block content %}
+
+<!-- Encabezado con saludo al profesor y botón de acción rápida -->
+<div class="d-flex justify-content-between align-items-end mb-4">
+    <div>
+        <!-- {{ user.username }}: Variable inyectada por el context_processor 'auth' -->
+        <h2 class="fw-bold text-dark">Bienvenido, {{ user.username }}</h2>
+        <p class="text-muted mb-0">Resumen de hoy de sus clases y alumnos.</p>
+    </div>
+    <!-- Botón de acceso rápido a la sección de calificaciones -->
+    <a href="{% url 'registro_de_notas' %}" class="btn btn-primary shadow-sm">
+        <i class="bi bi-plus-circle-fill me-2"></i> Nueva Calificación
+    </a>
+</div>
+
+<!-- ================================================
+     TARJETAS DE RESUMEN (KPIs)
+     ================================================
+     Muestran métricas clave del profesor:
+     - Total de alumnos (sin duplicados entre materias)
+     - Número de materias activas
+-->
+<div class="container-fluid ">
+    <div class="row mb-4 justify-content-center">
+
+        <!-- Tarjeta: Total Alumnos -->
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <p class="text-uppercase text-muted fw-bold small">Total Alumnos</p>
+                        <div class="bg-opacity-10 p-2 rounded" style="background-color: #e77e23; color: #f9e79f;">
+                            <i class="bi bi-person-workspace"></i>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-end gap-2">
+                        <!-- {{ total_alumnos }}: Calculado en views.py con .distinct().count() -->
+                        <h2 class="fw-bold mb-0">{{ total_alumnos }}</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tarjeta: Materias Activas -->
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <p class="text-uppercase text-muted fw-bold small">Materias Activas</p>
+                        <div class="bg-opacity-10 p-2 rounded" style="background-color: #e77e23; color: #f9e79f;">
+                            <i class="bi bi-journals"></i>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-end gap-2">
+                        <!-- .count: Método de Django que cuenta elementos del queryset -->
+                        <h2 class="fw-bold mb-0">{{ materias.count }}</h2>
+                        <span class="text-muted small">asignadas</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================================================
+     TABLA DE MATERIAS
+     ================================================
+     Muestra las materias del profesor con la primera letra
+     como avatar circular y un botón "Ver Alumnos".
+     
+     Bucle 'for' / 'empty' / 'endfor':
+     - 'for': Itera sobre cada materia
+     - 'empty': Se ejecuta si la lista está vacía
+     - forloop.counter: Número de iteración (1, 2, 3...)
+     - |slice:":1": Filtro que toma solo el primer carácter
+-->
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+        <h5 class="m-0 fw-bold">Mis Materias Asignadas</h5>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="bg-light">
+                <tr>
+                    <th class="ps-4 text-uppercase text-muted small fw-bold">Materia</th>
+                    <th class="text-end pe-4 text-uppercase text-muted small fw-bold">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for materia in materias %}
+                <tr>
+                    <td class="ps-4">
+                        <div class="d-flex align-items-center">
+                            <!-- Avatar circular con la primera letra de la materia -->
+                            <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center fw-bold me-3"
+                                style="width: 40px; height: 40px;">
+                                {{ materia.nombre|slice:":1" }}
+                            </div>
+                            <span class="fw-bold text-dark">{{ materia.nombre }}</span>
+                        </div>
+                    </td>
+                    <td class="text-end pe-4">
+                        <a href="{% url 'lista_alumnos' %}" class="btn btn-sm btn-primary shadow-sm px-3">
+                            Ver Alumnos
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <!-- Se muestra cuando el profesor no tiene materias asignadas -->
+                <tr>
+                    <td colspan="2" class="text-center py-4 text-muted">No tienes materias asignadas.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,435 @@
+<!--
+=====================================================================
+BASE.HTML - Plantilla Base del Sistema (Layout Principal)
+=====================================================================
+HERENCIA DE TEMPLATES EN DJANGO:
+Este archivo es la "plantilla madre". Todas las páginas del sistema
+la heredan usando extends 'sistemas/base.html'.
+
+base.html define la ESTRUCTURA común (sidebar, navbar, footer)
+y las páginas hijas SOLO definen su contenido específico usando
+block content...endblock
+
+Ejemplo de herencia:
+base.html → sidebar + navbar + block content
+dashboard.html → extends 'base.html' → solo el contenido
+notas.html → extends 'base.html' → solo el contenido
+
+ESTRUCTURA DE LA PÁGINA:
+Sidebar (col-md-2) + Contenido dinámico (col-md-10)
+
+PALETA DE COLORES (Dorado-Ámbar Educativa):
+#fdf6ec → Fondo crema del body
+#fef9f0 → Fondo cálido del sidebar
+#d15400 → Naranja profundo (botones, íconos, avatar)
+#bf3a2b → Rojo ladrillo (hover de botones)
+#fef5e7 → Fondo hover del menú de navegación
+
+RESPONSIVIDAD:
+- Desktop (≥768px): Sidebar visible, navbar oculta
+- Móvil (<768px): Sidebar oculto → menú offcanvas
+    (deslizable)
+-->
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduManager - Panel Docente</title>
+
+    <!--Icono de la pestaña-->
+    <link rel="icon" href="{% static 'app_principal/img/logo-ies-playamar.png' %}">
+
+    <!--Icono de la pestaña-->
+    <link rel="icon" href="{% static 'img/logo-ies-playamar.png' %}">
+
+    <!-- 'block title': Las páginas hijas pueden sobreescribir el título
+         Ejemplo: block title → Alumnos - EduManager → endblock -->
+    <title>{% block title %}EduManager{% endblock %}</title>
+
+    <!-- Bootstrap 5 CSS y Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+
+    <style>
+        /* ============================================================
+           ESTILOS GLOBALES DEL SISTEMA
+           Estos estilos se aplican a TODAS las páginas que heredan
+           de base.html (dashboard, alumnos, materias, notas)
+           ============================================================ */
+
+        /* Fondo crema cálido para toda la aplicación */
+        body {
+            background-color: #fdf6ec;
+            overflow-x: hidden;
+            /* Evita scroll horizontal en móvil */
+        }
+
+        /* Sidebar lateral: Barra de navegación fija a la izquierda */
+        .sidebar {
+            min-height: 100vh;
+            /* Ocupa toda la altura de la ventana */
+            background-color: #fef9f0;
+            /* Blanco cálido */
+            border-right: 1px solid #f5e6ce;
+            /* Línea divisoria sutil */
+        }
+
+        /* Estilos de los enlaces de navegación del sidebar */
+        .nav-link {
+            color: #6c757d;
+            /* Gris para enlaces inactivos */
+            font-weight: 500;
+            padding: 12px 20px;
+            border-radius: 8px;
+            /* Bordes redondeados */
+            margin-bottom: 5px;
+        }
+
+        /* Hover y estado activo de los enlaces de navegación
+           'active' se añade dinámicamente con if request.resolver_match...  */
+        .nav-link:hover,
+        .nav-link.active {
+            background-color: #fef5e7;
+            /* Fondo dorado muy claro */
+            color: #d15400;
+            /* Texto naranja profundo */
+        }
+
+        /* Icono dentro del enlace de navegación */
+        .nav-link i {
+            margin-right: 10px;
+            font-size: 1.1rem;
+        }
+
+        /* Área de contenido principal (a la derecha del sidebar) */
+        .content-area {
+            padding: 30px;
+        }
+
+        /* Estilo global de las tarjetas (cards) de Bootstrap */
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+            /* Sombra sutil */
+        }
+
+        /* Avatar circular del usuario en el sidebar */
+        .user-avatar {
+            width: 35px;
+            height: 35px;
+            background-color: #d15400;
+            /* Naranja con la inicial del usuario */
+            color: white;
+            border-radius: 50%;
+            /* Forma circular */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        /* ============================================================
+           SOBREESCRITURA DE btn-primary DE BOOTSTRAP
+           Cambiamos el azul por defecto (#0d6efd) por nuestra paleta
+           dorado-ámbar. Esto afecta TODOS los btn-primary del sistema.
+           ============================================================ */
+        .btn-primary {
+            background-color: #d15400;
+            border-color: #d15400;
+        }
+
+        .btn-primary:hover {
+            background-color: #bf3a2b;
+            border-color: #bf3a2b;
+        }
+
+        .btn-primary:focus {
+            background-color: #bf3a2b;
+            border-color: #bf3a2b;
+            box-shadow: 0 0 0 0.25rem rgba(209, 84, 0, 0.4);
+        }
+
+        .btn-primary:active {
+            background-color: #a83228 !important;
+            border-color: #a83228 !important;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container-fluid">
+        <div class="row">
+
+            <!-- ========================================================
+                 SIDEBAR - Menú lateral de escritorio
+                 ========================================================
+                 col-md-2: Ocupa 2 de 12 columnas (≈16% del ancho)
+                 d-none d-md-block: Oculto en móvil, visible en tablet/desktop
+            -->
+            <div class="col-md-2 sidebar d-none d-md-block p-3">
+
+                <!-- Logo y nombre de la aplicación -->
+                <div class="d-flex align-items-center mb-4 px-2 mt-2">
+                    <div class="text-white p-2 rounded me-2" style="background-color: #d15400;">
+                        <i class="bi bi-mortarboard-fill"></i>
+                    </div>
+                    <div>
+                        <h5 class="m-0 fw-bold">EduManager</h5>
+                        <small class="text-muted">Panel Docente</small>
+                    </div>
+                </div>
+
+                <!-- ================================================
+                     MENÚ DE NAVEGACIÓN
+                     ================================================
+                      url 'nombre' genera la URL de cada sección.
+                     
+                     La clase 'active' se añade CONDICIONALMENTE:
+                     request.resolver_match.url_name devuelve el 'name'
+                     de la URL actual. Si coincide, añadimos 'active'.
+                     Esto resalta visualmente la sección actual.
+                -->
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a href="{% url 'dashboard' %}"
+                            class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                            <i class="bi bi-speedometer2"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{% url 'lista_materias' %}"
+                            class="nav-link {% if request.resolver_match.url_name == 'lista_materias' %}active{% endif %}">
+                            <i class="bi bi-book"></i> Materias
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{% url 'lista_alumnos' %}"
+                            class="nav-link {% if request.resolver_match.url_name == 'lista_alumnos' %}active{% endif %}">
+                            <i class="bi bi-people"></i> Alumnos
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{% url 'registro_de_notas' %}"
+                            class="nav-link {% if request.resolver_match.url_name == 'registro_de_notas' %}active{% endif %}">
+                            <i class="bi bi-pencil-square"></i> Calificaciones
+                        </a>
+                    </li>
+                </ul>
+
+                <!-- ================================================
+                     SECCIÓN USUARIO + LOGOUT
+                     ================================================
+                     {{ user.username }}: Variable inyectada por el context_processor 'auth'.
+                     |slice:":1"|upper: Filtros de Django que toman la primera letra
+                     y la convierten a mayúscula para mostrarla en el avatar.
+                     Ejemplo: "profesor1" → "P"
+                -->
+                <div class="mt-auto pt-5 px-2">
+                    <hr>
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="user-avatar me-2">{{ user.username|slice:":1"|upper }}</div>
+                        <div style="overflow: hidden;">
+                            <div class="fw-bold text-truncate">{{ user.username }}</div>
+                            <small class="text-muted">Profesor</small>
+                        </div>
+                    </div>
+                    <!-- Formulario de logout: Usa POST por seguridad (no GET) -->
+                    <form action="{% url 'logout' %}" method="post">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-danger w-100 btn-sm">
+                            <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- ========================================================
+                 ÁREA DE CONTENIDO PRINCIPAL
+                 ========================================================
+                 col-md-10: Ocupa el 83% restante de la pantalla
+            -->
+            <div class="col-md-10 content-area">
+
+                <!-- ================================================
+                     NAVBAR MÓVIL (solo visible en pantallas < 768px)
+                     ================================================
+                     Muestra un botón hamburguesa que abre el offcanvas.
+                     d-md-none: Solo visible en móvil.
+                -->
+                <nav class="navbar navbar-light bg-white d-md-none mb-4 rounded shadow-sm">
+                    <div class="container-fluid">
+                        <span class="navbar-brand mb-0 h1">EduManage</span>
+                        <!-- data-bs-toggle="offcanvas": Abre el menú deslizable -->
+                        <button class="btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#menuMobile"
+                            aria-controls="menuMobile" style="border-color: #d15400; color: #d15400;">
+                            <i class="bi bi-list"></i>
+                        </button>
+                    </div>
+                </nav>
+
+                <!-- ================================================
+                     MENÚ OFFCANVAS (menú deslizable para móvil)
+                     ================================================
+                     Se abre desde la izquierda (offcanvas-start).
+                     Contiene la misma navegación que el sidebar de desktop.
+                -->
+                <div class="offcanvas offcanvas-start" tabindex="-1" id="menuMobile" aria-labelledby="menuMobileLabel">
+                    <div class="offcanvas-header">
+                        <div class="d-flex align-items-center">
+                            <div class="text-white p-2 rounded me-2" style="background-color: #d15400;">
+                                <i class="bi bi-mortarboard-fill"></i>
+                            </div>
+                            <div>
+                                <h5 class="m-0 fw-bold" id="menuMobileLabel">EduManage</h5>
+                                <small class="text-muted">Panel Docente</small>
+                            </div>
+                        </div>
+                        <!-- Botón para cerrar el offcanvas -->
+                        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                    </div>
+                    <div class="offcanvas-body d-flex flex-column">
+                        <!-- Menú de navegación (duplicado del sidebar para móvil) -->
+                        <ul class="nav flex-column">
+                            <li class="nav-item">
+                                <a href="{% url 'dashboard' %}"
+                                    class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                                    <i class="bi bi-speedometer2"></i> Dashboard
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{% url 'lista_materias' %}"
+                                    class="nav-link {% if request.resolver_match.url_name == 'lista_materias' %}active{% endif %}">
+                                    <i class="bi bi-book"></i> Materias
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{% url 'lista_alumnos' %}"
+                                    class="nav-link {% if request.resolver_match.url_name == 'lista_alumnos' %}active{% endif %}">
+                                    <i class="bi bi-people"></i> Alumnos
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{% url 'registro_de_notas' %}"
+                                    class="nav-link {% if request.resolver_match.url_name == 'registro_de_notas' %}active{% endif %}">
+                                    <i class="bi bi-pencil-square"></i> Calificaciones
+                                </a>
+                            </li>
+                        </ul>
+                        <!-- Sección usuario + logout en el offcanvas -->
+                        <div class="mt-auto pt-3">
+                            <hr>
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="user-avatar me-2">{{ user.username|slice:":1"|upper }}</div>
+                                <div style="overflow: hidden;">
+                                    <div class="fw-bold text-truncate">{{ user.username }}</div>
+                                    <small class="text-muted">Profesor</small>
+                                </div>
+                            </div>
+                            <form action="{% url 'logout' %}" method="post">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-danger w-100 btn-sm">
+                                    <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contenido Principal -->
+                {% block content %}
+                {% endblock %}
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================
+         SISTEMA DE MENSAJERÍA GLOBAL (TOASTS Y MODALES)
+         ============================================================ -->
+    {% if messages %}
+
+    <!-- 1. CONTENEDOR DE ALERTAS (Éxito, Info, Warning) -->
+    <!-- Se muestran como "toasts" flotantes en la parte superior central -->
+    <div class="toast-container position-fixed top-0 start-50 translate-middle-x p-3" style="z-index: 1050;">
+        {% for message in messages %}
+        {% if 'error' not in message.tags %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm border-0 mb-2" role="alert"
+            style="min-width: 300px;">
+            <div class="d-flex align-items-center">
+                {% if 'success' in message.tags %}
+                <i class="bi bi-check-circle-fill fs-4 me-2"></i>
+                {% else %}
+                <i class="bi bi-info-circle-fill fs-4 me-2"></i>
+                {% endif %}
+                <div>
+                    <strong>{{ message|capfirst }}</strong>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+
+    <script>
+        // Auto-cerrar alertas de éxito después de 3 segundos
+        document.addEventListener('DOMContentLoaded', function () {
+            setTimeout(function () {
+                var alerts = document.querySelectorAll('.toast-container .alert');
+                alerts.forEach(function (alert) {
+                    // Solo cerrar si no es un error (aunque los errores ya están en modal)
+                    if (!alert.classList.contains('alert-danger')) {
+                        var bsAlert = new bootstrap.Alert(alert);
+                        bsAlert.close();
+                    }
+                });
+            }, 3000); // 3000ms = 3 segundos
+        });
+    </script>
+
+    <!-- 2. MODAL DE ERROR (Solo para mensajes con tag 'error') -->
+    <!-- Se activa automáticamente vía JS si existe un mensaje de error -->
+    {% for message in messages %}
+    {% if 'error' in message.tags %}
+    <div class="modal fade" id="errorModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-danger text-white border-0">
+                    <h5 class="modal-title fw-bold">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i> Error
+                    </h5>
+                </div>
+                <div class="modal-body p-4 text-center">
+                    <div class="text-danger mb-3">
+                        <i class="bi bi-x-circle display-1"></i>
+                    </div>
+                    <!-- <h5 class="fw-bold mb-3">¡Algo salió mal!</h5> -->
+                    <p class="text-muted mb-0 fw-bold">{{ message }}</p>
+                </div>
+                <div class="modal-footer border-0 justify-content-center pb-4">
+                    <button type="button" class="btn btn-danger px-5 fw-bold rounded-pill"
+                        data-bs-dismiss="modal">Entendido</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Script automático para mostrar el modal -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
+            errorModal.show();
+        });
+    </script>
+    {% endif %}
+    {% endfor %}
+
+    {% endif %}
+
+    <!-- Bootstrap JS Bundle: Incluye Popper.js para tooltips y dropdowns -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>
