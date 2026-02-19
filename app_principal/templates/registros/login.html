@@ -7,23 +7,18 @@ porque tiene su propio diseño (split-panel) diferente al layout
 del sistema.
 
 ESTRUCTURA:
-  - Panel izquierdo: Imagen de fondo con overlay dorado + info del sistema
-  - Panel derecho: Formulario de login (usuario + contraseña)
+  - Body sin scroll (overflow: hidden, height: 100vh)
+  - Panel derecho con scroll interno (overflow-y: auto)
 
 PALETA DE COLORES (Dorado-Ámbar Educativa):
-  #f9e79f → Dorado claro (conocimiento)
-  #f1c40e → Oro (excelencia)
-  #e77e23 → Naranja (energía)
-  #d15400 → Naranja profundo (determinación)
-  #bf3a2b → Rojo ladrillo (tradición académica)
+  #f9e79f → Dorado claro
+  #f1c40e → Oro
+  #e77e23 → Naranja
+  #d15400 → Naranja profundo
+  #bf3a2b → Rojo ladrillo
 
 ETIQUETAS DJANGO USADAS:
-  load static          → Carga el sistema de archivos estáticos
-  static '...'         → Genera la URL de un archivo estático (CSS, img)
-  csrf_token           → Token de seguridad obligatorio en formularios POST
-  url 'nombre'         → Genera la URL a partir del 'name' en urls.py
-  if / endif           → Condicional: muestra contenido si se cumple
-  {{ variable }}       → Imprime el valor de una variable del contexto
+  load static, static '...', csrf_token, url 'nombre', if/endif
 =====================================================================
 -->
 {% load static %}
@@ -47,28 +42,17 @@ ETIQUETAS DJANGO USADAS:
     <style>
         /* ============================================================
            ESTILOS PERSONALIZADOS DEL LOGIN
-           Estos estilos sobreescriben los de Bootstrap para
-           personalizar la apariencia de la página de login.
            ============================================================ */
 
-        /* Fondo naranja profundo que envuelve toda la página */
+        /* Reset y configuración base del body */
         body {
-            background-color: #d15400;
-            display: flex;
-            /* Flexbox para centrado vertical */
-            align-items: center;
-            /* Centra verticalmente */
-            min-height: 100vh;
-            /* Ocupa toda la altura de la ventana */
-        }
-
-        /* Tarjeta principal del login con bordes redondeados y sombra */
-        .login-card {
-            border: none;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            background-color: #fff;
+            height: 100vh;
+            /* Altura fija */
             overflow: hidden;
-            /* Oculta contenido que se sale del borde redondeado */
+            /* Evita scroll en el body */
+            margin: 0;
+            padding: 0;
         }
 
         /* Clase para el panel lateral (no se usa directamente, reservada) */
@@ -139,113 +123,102 @@ ETIQUETAS DJANGO USADAS:
 
 <body>
 
-    <!-- Container de Bootstrap: Centra el contenido con márgenes -->
-    <div class="container">
-        <!-- row + justify-content-center: Centra las columnas horizontalmente -->
-        <div class="row justify-content-center">
-            <!-- col-lg-10: Ocupa 10 de 12 columnas en pantallas grandes -->
-            <div class="col-lg-10">
-                <div class="card login-card">
-                    <!-- row g-0: Elimina el gutter (espacio) entre columnas -->
-                    <div class="row g-0">
+    <!-- container-fluid p-0: Ocupa todo el ancho de la ventana -->
+    <div class="container-fluid p-0">
+        <!-- row g-0 h-100: Grid sin espacios y altura fija 100% -->
+        <div class="row g-0 h-100">
 
-                        <!-- ================================================
-                             PANEL IZQUIERDO - Imagen de fondo + Info
-                             ================================================
-                             d-none d-lg-flex: Oculto en móvil, visible en pantallas ≥992px
-                             position-relative: Necesario para el overlay (capa encima)
-                             
-                             La imagen de fondo se carga con la etiqueta 'static' para que
-                             Django genere la URL correcta del archivo estático.
-                        -->
-                        <div class="col-lg-5 d-none d-lg-flex flex-column justify-content-center p-5 text-white position-relative"
-                            style='background: url("{% static "app_principal/img/img002.avif" %}") center/cover no-repeat;'>
+            <!-- ================================================
+                 PANEL IZQUIERDO (50%) - Imagen de fondo + Info
+                 ================================================
+                 d-none d-lg-flex: Oculto en móvil, visible en pantallas grandes
+            -->
+            <div class="col-lg-6 d-none d-lg-flex flex-column justify-content-center p-5 text-white position-relative"
+                style='background: url("{% static "app_principal/img/img002.avif" %}") center/cover no-repeat;'>
 
-                            <!-- Overlay: Capa semi-transparente encima de la imagen
-                                 Gradiente de dorado (#f1c40e) a naranja (#d15400)
-                                 El rgba controla la opacidad (0.85 = 85% visible) -->
-                            <div class="position-absolute top-0 start-0 w-100 h-100"
-                                style="background: linear-gradient(135deg, rgba(241, 196, 14, 0.85) 0%, rgba(209, 84, 0, 0.9) 100%);">
-                            </div>
+                <!-- Overlay: Capa semi-transparente encima de la imagen
+                     Gradiente de dorado (#f1c40e) a naranja (#d15400)
+                -->
+                <div class="position-absolute top-0 start-0 w-100 h-100"
+                    style="background: linear-gradient(135deg, rgba(241, 196, 14, 0.85) 0%, rgba(209, 84, 0, 0.9) 100%);">
+                </div>
 
-                            <!-- z-1: Coloca el contenido POR ENCIMA del overlay -->
-                            <div class="position-relative z-1">
-                                <!-- Icono de birrete (graduación) -->
-                                <div class="mb-4">
-                                    <i class="bi bi-mortarboard-fill fs-1"></i>
-                                </div>
-                                <h2 class="fw-bold mb-3">Bienvenido a EduManager</h2>
-                                <p class="opacity-75">La plataforma líder para gestión docente. Controla tus clases,
-                                    alumnos y calificaciones en un solo lugar.</p>
-                            </div>
+                <!-- z-1: Coloca el contenido POR ENCIMA del overlay -->
+                <div class="position-relative z-1">
+                    <!-- Icono de birrete (graduación) -->
+                    <div class="mb-4">
+                        <i class="bi bi-mortarboard-fill fs-1"></i>
+                    </div>
+                    <h2 class="fw-bold mb-3">Bienvenido a EduManager</h2>
+                    <p class="opacity-75">La plataforma líder para gestión docente. Controla tus clases,
+                        alumnos y calificaciones en un solo lugar.</p>
+                </div>
+            </div>
+
+            <!-- ================================================
+                 PANEL DERECHO (50%) - Formulario de Login
+                 ================================================
+                 scrollable-panel: Permite scroll interno
+            -->
+            <div class="col-lg-6 bg-white">
+
+                <!-- Contenedor interno para limitar ancho y centrar horizontalmente el contenido -->
+                <div class="d-flex align-items-center min-vh-100">
+                    <div class="w-100 p-5 mx-auto" style="max-width: 600px;">
+
+                        <!-- Logo visible SOLO en móvil (d-lg-none) -->
+                        <div class="text-center mb-5 d-lg-none">
+                            <h3 class="fw-bold" style="color: #bf3a2b;">
+                                <i class="bi bi-mortarboard-fill me-2"></i>EduManager
+                            </h3>
                         </div>
 
-                        <!-- ================================================
-                             PANEL DERECHO - Formulario de Login
-                             ================================================
-                             bg-white: Fondo blanco para contraste con el panel izquierdo
-                             col-lg-7: Ocupa 7 de 12 columnas (más ancho que el izquierdo)
-                        -->
-                        <div class="col-lg-7 bg-white p-5">
-                            <!-- Logo visible SOLO en móvil (d-lg-none) cuando
-                                 el panel izquierdo está oculto -->
-                            <div class="text-center mb-5 d-lg-none">
-                                <h3 class="fw-bold text-primary"><i class="bi bi-mortarboard-fill me-2"></i>EduManager
-                                </h3>
+                        <h3 class="fw-bold mb-2">Iniciar Sesión</h3>
+                        <p class="text-muted mb-4">Ingresa tus credenciales para gestionar tus clases.</p>
+
+                        <!-- Formulario de login -->
+                        <form method="POST">
+                            {% csrf_token %}
+
+                            <!-- Mostrar errores de autenticación -->
+                            {% if form.errors %}
+                            <div class="alert alert-danger">
+                                <small><strong>Error:</strong> Usuario o contraseña incorrectos.</small>
                             </div>
-                            <h3 class="fw-bold mb-2">Iniciar Sesión</h3>
-                            <p class="text-muted mb-4">Ingresa tus credenciales para gestionar tus clases.</p>
+                            {% endif %}
 
-                            <!-- Formulario de login - method="POST" para enviar datos seguros -->
-                            <form method="POST">
-                                <!-- csrf_token: Token anti-falsificación. OBLIGATORIO en forms POST.
-                                     Sin esto, Django rechaza el formulario con error 403 Forbidden.
-                                     Protege contra ataques CSRF (Cross-Site Request Forgery). -->
-                                {% csrf_token %}
-
-                                <!-- Mostrar errores de autenticación (usuario/contraseña incorrectos) -->
-                                {% if form.errors %}
-                                <div class="alert alert-danger">
-                                    <small><strong>Error:</strong> Usuario o contraseña incorrectos.</small>
-                                </div>
-                                {% endif %}
-
-                                <!-- Campo de usuario -->
-                                <div class="mb-3">
-                                    <label class="form-label fw-bold small text-muted">Usuario</label>
-                                    <!-- name="username": Django busca este nombre para autenticar -->
-                                    <input type="text" name="username" class="form-control form-control-lg"
-                                        placeholder="Tu usuario" required>
-                                </div>
-
-                                <!-- Campo de contraseña -->
-                                <div class="mb-4">
-                                    <label class="form-label fw-bold small text-muted">Contraseña</label>
-                                    <!-- name="password": Django busca este nombre para autenticar -->
-                                    <input type="password" name="password" class="form-control form-control-lg"
-                                        placeholder="••••••••" required>
-                                </div>
-
-                                <!-- Botón de envío con estilo personalizado -->
-                                <button type="submit" class="btn w-100 btn-login fw-bold">Iniciar
-                                    Sesión</button>
-                            </form>
-
-                            <!-- Enlace al registro para nuevos profesores -->
-                            <div class="text-center mt-4">
-                                <!-- url 'registro_profesor' genera la URL /registro/ -->
-                                <p class="small text-muted">¿Nuevo en la institución? <a
-                                        href="{% url 'registro_profesor' %}"
-                                        class="fw-bold text-decoration-none">Registrate</a></p>
+                            <!-- Campo de usuario -->
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small text-muted">Usuario</label>
+                                <input type="text" name="username" class="form-control form-control-lg"
+                                    placeholder="Tu usuario" required>
                             </div>
+
+                            <!-- Campo de contraseña -->
+                            <div class="mb-4">
+                                <label class="form-label fw-bold small text-muted">Contraseña</label>
+                                <input type="password" name="password" class="form-control form-control-lg"
+                                    placeholder="••••••••" required>
+                            </div>
+
+                            <!-- Botón de envío -->
+                            <button type="submit" class="btn w-100 btn-login fw-bold">Iniciar Sesión</button>
+                        </form>
+
+                        <!-- Enlace al registro -->
+                        <div class="text-center mt-4">
+                            <p class="small text-muted">¿Nuevo en la institución? <a
+                                    href="{% url 'registro_profesor' %}" class="fw-bold text-decoration-none"
+                                    style="color: #bf3a2b;">Registrate</a></p>
                         </div>
                     </div>
                 </div>
             </div>
+
         </div>
     </div>
 
-    <!-- Bootstrap JS: Necesario para componentes interactivos (modales, dropdowns, etc.) -->
+    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 

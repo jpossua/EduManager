@@ -2,13 +2,6 @@
 
 Sistema integral de gestión académica para profesores, con control de alumnos, materias, actividades y calificaciones, diseño moderno *Fire Gradient* y autenticación segura. Construido con **Django 5**, **Bootstrap 5** y **SQLite**.
 
-<p align="center">
-    <img src="https://img.shields.io/badge/Django-5.0-092E20?style=for-the-badge&logo=django&logoColor=white" alt="Django">
-    <img src="https://img.shields.io/badge/Bootstrap-5.3-7952B3?style=for-the-badge&logo=bootstrap&logoColor=white" alt="Bootstrap">
-    <img src="https://img.shields.io/badge/Python-3.14-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python">
-    <img src="https://img.shields.io/badge/SQLite-003B57?style=for-the-badge&logo=sqlite&logoColor=white" alt="SQLite">
-</p>
-
 ![Landing Page](imgReadme/login.png)
 
 ## Descripción

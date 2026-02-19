@@ -3,19 +3,16 @@
 REGISTRO.HTML - Página de Registro de Profesores
 =====================================================================
 Permite a nuevos profesores crear su cuenta en EduManager.
-Diseño similar al login (split-panel), pero con formulario dinámico.
+Diseño split-panel (50% imagen, 50% formulario) con SCROLL INTERNO.
 
 CARACTERÍSTICAS ESPECIALES:
+  - Body sin scroll (overflow: hidden, height: 100vh)
+  - Panel derecho con scroll interno (overflow-y: auto)
   - El formulario se genera DINÁMICAMENTE con 'for field in form'
-  - Cada campo muestra su label, input, texto de ayuda y errores
-  - El formulario RegistroProfesorForm (forms.py) agrega las clases
-    Bootstrap automáticamente a cada campo
+  - Diseño responsivo: Imagen oculta en móvil
 
 FLUJO:
-  1. El profesor llena el formulario
-  2. POST → views.py → registro_profesor()
-  3. Si es válido → Crea el usuario → Redirige a login
-  4. Si hay errores → Re-muestra el formulario con los errores
+  POST → views.py → registro_profesor() → Login (si éxito)
 =====================================================================
 -->
 {% load static %}
@@ -35,20 +32,17 @@ FLUJO:
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
 
     <style>
-        /* Fondo naranja profundo - mismo que login para consistencia visual */
-        body {
-            background-color: #d15400;
-            display: flex;
-            align-items: center;
-            min-height: 100vh;
-        }
+        /* ============================================================
+           ESTILOS PERSONALIZADOS DEL REGISTRO
+           ============================================================ */
 
-        /* Tarjeta de registro con sombra y bordes redondeados */
-        .register-card {
-            border: none;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
-            overflow: hidden;
+        body {
+            background-color: #fff;
+            min-height: 100vh;
+            overflow-x: hidden;
+            /* Evita scroll en el body */
+            margin: 0;
+            padding: 0;
         }
 
         /* Panel lateral con gradiente dorado → naranja */
@@ -57,11 +51,19 @@ FLUJO:
             color: white;
         }
 
-        /* ============================================================
-           BOTÓN DE REGISTRO
-           Misma paleta que el botón de login para consistencia.
-           ============================================================ */
+        /* ESTILO EXTRA para que la imagen se quede fija al hacer scroll */
+        .sticky-left-panel {
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Botón de registro */
         .btn-registro {
+            padding: 0.8rem;
+            border-radius: 10px;
+            font-size: 1.05rem;
             background-color: #d15400;
             border: none;
             color: #fff;
@@ -84,117 +86,123 @@ FLUJO:
             transform: scale(0.98);
             color: #fff;
         }
+
+        /* Ajustes para inputs generados por Django form */
+        .form-control,
+        .form-select {
+            padding: 0.4rem 1rem;
+            border-radius: 10px;
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            background-color: #fff;
+            border-color: #e77e23;
+            box-shadow: 0 0 0 0.15rem rgba(231, 126, 35, 0.15);
+        }
     </style>
 </head>
 
 <body>
 
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-lg-10">
-                <div class="card register-card">
-                    <div class="row g-0">
+    <!-- container-fluid p-0: Ocupa todo el ancho -->
+    <div class="container-fluid p-0">
+        <!-- row g-0 h-100: Grid sin espacios y altura fija 100% -->
+        <div class="row g-0 h-100">
 
-                        <!-- ================================================
-                             PANEL IZQUIERDO - Información del sistema
-                             ================================================
-                             Visible solo en pantallas grandes (d-none d-lg-flex)
-                             Usa la clase .bg-login-side para el gradiente dorado
+            <!-- ================================================
+                 PANEL IZQUIERDO (50%) - Imagen de fondo + Info
+                 ================================================
+                 Visible solo en pantallas grandes
+            -->
+            <div class="col-lg-6 d-none d-lg-flex flex-column justify-content-center p-5 text-white position-relative sticky-left-panel"
+                style='background: url("{% static "app_principal/img/img001.jpg" %}") left/cover no-repeat;'>
 
-                             La imagen de fondo se carga con la etiqueta 'static' para que
-                             Django genere la URL correcta del archivo estático.
-                        -->
-                        <div class="col-lg-5 d-none d-lg-flex flex-column justify-content-center p-5 text-white position-relative"
-                            style='background: url("{% static "app_principal/img/img001.jpg" %}") left/cover no-repeat;'>
-                            <!-- Overlay: Capa semi-transparente encima de la imagen
-                             Gradiente de dorado (#f1c40e) a naranja (#d15400)
-                             El rgba controla la opacidad (0.85 = 85% visible)-->
-                            <div class="position-absolute top-0 start-0 w-100 h-100"
-                                style="background: linear-gradient(135deg, rgba(241, 196, 14, 0.8) 0%, rgba(209, 84, 0, 0.9) 100%);">
-                            </div>
+                <!-- Overlay: Gradiente dorado → naranja -->
+                <div class="position-absolute top-0 start-0 w-100 h-100"
+                    style="background: linear-gradient(135deg, rgba(241, 196, 14, 0.8) 0%, rgba(209, 84, 0, 0.9) 100%);">
+                </div>
 
-                            <!-- Contenido con z-index para estar SOBRE el overlay -->
-                            <div class="position-relative z-1">
-                                <div class="mb-4">
-                                    <i class="bi bi-mortarboard-fill fs-1"></i>
-                                </div>
-                                <h2 class="fw-bold mb-3">Únete a EduManager</h2>
-                                <p class="opacity-75">La plataforma líder para gestión docente. Controla tus clases,
-                                    alumnos y calificaciones en un solo lugar.</p>
-                            </div>
+                <!-- Contenido sobre el overlay -->
+                <div class="position-relative z-1">
+                    <div class="mb-4">
+                        <i class="bi bi-mortarboard-fill fs-1"></i>
+                    </div>
+                    <h2 class="fw-bold mb-3">Únete a EduManager</h2>
+                    <p class="opacity-75">La plataforma líder para gestión docente. Controla tus clases,
+                        alumnos y calificaciones en un solo lugar.</p>
+                </div>
+            </div>
+
+            <!-- ================================================
+                 PANEL DERECHO (50%) - Formulario de Registro
+                 ================================================
+                 scrollable-panel: Permite scroll interno si el form es alto
+            -->
+            <div class="col-lg-6 bg-white scrollable-panel">
+
+                <!-- Wrapper con min-vh-100 para centrar si es pequeño, 
+                     pero permitir scroll si es grande. 
+                     d-flex: Para usar align-items-center (centrado vertical)
+                -->
+                <div class="d-flex align-items-center min-vh-100">
+                    <div class="w-100 px-5 mx-auto" style="max-width: 600px;">
+
+                        <!-- Logo visible solo en móvil -->
+                        <div class="text-center my-4 d-lg-none">
+                            <h3 class="fw-bold" style="color: #bf3a2b;">
+                                <i class="bi bi-mortarboard-fill me-2"></i>EduManager
+                            </h3>
                         </div>
 
-                        <!-- ================================================
-                             PANEL DERECHO - Formulario de Registro
-                             ================================================ -->
-                        <div class="col-lg-7 bg-white p-5">
-                            <!-- Logo visible solo en móvil -->
-                            <div class="text-center mb-5 d-lg-none">
-                                <h3 class="fw-bold text-primary">EduManager</h3>
+                        <h3 class="fw-bold mb-2">Crear Cuenta de Profesor</h3>
+                        <p class="text-muted mb-4">Introduce tus datos para empezar.</p>
+
+                        <form method="post">
+                            {% csrf_token %}
+
+                            <!-- Mensaje de error general -->
+                            {% if form.errors %}
+                            <div class="alert alert-danger">
+                                <strong>Error:</strong> Por favor corrige los errores abajo.
                             </div>
-                            <h3 class="fw-bold mb-2">Crear Cuenta de Profesor</h3>
-                            <p class="text-muted mb-4">Introduce tus datos para empezar.</p>
+                            {% endif %}
 
-                            <form method="post">
-                                {% csrf_token %}
+                            <!-- Renderizado dinámico de campos -->
+                            {% for field in form %}
+                            <div class="mb-3">
+                                <label for="{{ field.id_for_label }}"
+                                    class="form-label fw-bold small text-muted">{{field.label }}</label>
 
-                                <!-- Mensaje de error general si hay errores en el formulario -->
-                                {% if form.errors %}
-                                <div class="alert alert-danger">
-                                    <strong>Error:</strong> Por favor corrige los errores abajo.
-                                </div>
+                                {{ field }}
+
+                                {% if field.help_text %}
+                                <div class="form-text small">{{ field.help_text }}</div>
                                 {% endif %}
 
-                                <!-- ================================================
-                                     RENDERIZADO DINÁMICO DE CAMPOS
-                                     ================================================
-                                     'for field in form' recorre TODOS los campos
-                                     del formulario RegistroProfesorForm automáticamente.
-                                     
-                                     Para cada campo genera:
-                                     - label: Etiqueta del campo (ej: "Nombre de usuario")
-                                     - field: El input HTML (con clases Bootstrap de forms.py)
-                                     - help_text: Texto de ayuda (ej: requisitos de contraseña)
-                                     - errors: Errores de validación específicos del campo
-                                     
-                                     Esto permite agregar/quitar campos en forms.py sin tocar HTML.
-                                -->
-                                {% for field in form %}
-                                <div class="mb-3">
-                                    <!-- field.id_for_label: Genera el atributo 'for' del label -->
-                                    <label for="{{ field.id_for_label }}"
-                                        class="form-label fw-bold small text-muted">{{field.label }}</label>
-
-                                    <!-- {{ field }}: Renderiza el input HTML completo del campo -->
-                                    {{ field }}
-
-                                    <!-- Texto de ayuda (opcional) - ej: "Mínimo 8 caracteres" -->
-                                    {% if field.help_text %}
-                                    <div class="form-text small">{{ field.help_text }}</div>
-                                    {% endif %}
-
-                                    <!-- Errores de validación del campo específico -->
-                                    {% if field.errors %}
-                                    <div class="text-danger small mt-1">
-                                        <!-- errors.0: Muestra solo el primer error para no abrumar -->
-                                        {{ field.errors.0 }}
-                                    </div>
-                                    {% endif %}
+                                {% if field.errors %}
+                                <div class="text-danger small mt-1">
+                                    {{ field.errors.0 }}
                                 </div>
-                                {% endfor %}
-
-                                <button type="submit" class="btn btn-registro w-100 py-2 fw-bold">Registrarse</button>
-                            </form>
-
-                            <!-- Enlace al login para profesores que ya tienen cuenta -->
-                            <div class="text-center mt-4">
-                                <p class="small text-muted">¿Ya tienes cuenta? <a href="{% url 'login' %}"
-                                        class="fw-bold text-decoration-none">Iniciar Sesión</a></p>
+                                {% endif %}
                             </div>
+                            {% endfor %}
+
+                            <button type="submit" class="btn btn-registro w-100 py-2 fw-bold">Registrarse</button>
+                        </form>
+
+                        <!-- Enlace al login -->
+                        <div class="text-center mt-4">
+                            <p class="small text-muted">¿Ya tienes cuenta? <a href="{% url 'login' %}"
+                                    class="fw-bold text-decoration-none" style="color: #bf3a2b;">Iniciar Sesión</a>
+                            </p>
                         </div>
                     </div>
                 </div>
             </div>
+
         </div>
     </div>
 
