@@ -36,6 +36,7 @@ from .forms import (
     NotaForm,
 )
 from django.contrib import messages
+from datetime import date  # Para comparar la fecha de la actividad con el día de hoy
 
 
 # =====================================================================
@@ -359,6 +360,22 @@ def registro_de_notas(request):
             except (Alumno.DoesNotExist, Actividad.DoesNotExist):
                 pass
 
+        # 4. VALIDACIÓN DE FECHA DE ACTIVIDAD
+        # No se puede calificar si la actividad aún no ha pasado
+        # (fecha de actividad >= hoy → todavía no se puede evaluar)
+        if actividad_id:
+            try:
+                actividad_obj = Actividad.objects.get(id=actividad_id)
+                if actividad_obj.fecha >= date.today():
+                    messages.error(
+                        request,
+                        f"No se puede calificar '{actividad_obj.nombre}': "
+                        f"la actividad aún no ha tenido lugar (fecha: {actividad_obj.fecha.strftime('%d/%m/%Y')}).",
+                    )
+                    return redirect("registro_de_notas")
+            except Actividad.DoesNotExist:
+                pass
+
         # Si pasa las validaciones manuales, procesamos el formulario normalmente
         form = NotaForm(request.POST, user=request.user)
         if form.is_valid():
@@ -416,6 +433,7 @@ def registro_de_notas(request):
             "form_actividad": form_actividad,
             "actividad_materia_map": actividad_materia_map,
             "alumno_materias_map": alumno_materias_map,
+            "hoy": date.today(),  # Para marcar actividades futuras como no evaluables
         },
     )
 

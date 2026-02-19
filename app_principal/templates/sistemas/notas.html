@@ -92,8 +92,18 @@ FILTROS JAVASCRIPT:
             </thead>
             <tbody>
                 {% for actividad in actividades %}
-                <tr>
-                    <td class="ps-4 text-muted small">{{ actividad.fecha|date:"d M, Y" }}</td>
+                {% if actividad.fecha >= hoy %}<tr class="table-warning">{% else %}
+                <tr>{% endif %}
+                    <td class="ps-4 text-muted small">
+                        {{ actividad.fecha|date:"d M, Y" }}
+                        {% if actividad.fecha >= hoy %}
+                        <!-- Actividad futura: no evaluable aún -->
+                        <span class="badge bg-warning text-dark ms-1"
+                            title="No se puede calificar hasta que pase la fecha">
+                            <i class="bi bi-lock-fill"></i> Pendiente
+                        </span>
+                        {% endif %}
+                    </td>
                     <td class="fw-bold text-dark">{{ actividad.nombre }}</td>
                     <td>{{ actividad.materia.nombre }}</td>
                     <td><span
@@ -183,7 +193,8 @@ FILTROS JAVASCRIPT:
                                     aria-label="Close"></button>
                             </div>
                             <div class="modal-body text-center pb-5">
-                                <div class="text-danger mb-3"><i class="bi bi-exclamation-circle display-1"></i></div>
+                                <div class="text-danger mb-3"><i class="bi bi-exclamation-circle display-1"></i>
+                                </div>
                                 <h4 class="fw-bold">¿Eliminar Actividad?</h4>
                                 <p class="text-muted">Estás a punto de eliminar <span
                                         class="fw-bold">{{actividad.nombre}}</span>. <br><span
