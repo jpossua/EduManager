@@ -46,7 +46,7 @@ Vista detallada de la gestión de estudiantes.
 El proyecto sigue la arquitectura **MVT (Model-View-Template)** de Django, garantizando una separación clara de la lógica de negocio, la presentación y los datos.
 
 ```
-gestion_escolar/
+EduManager/
 ├── EduManager/                 # Configuración del proyecto
 │   ├── settings.py             # Ajustes globales (Apps, DB, Static)
 │   └── urls.py                 # Enrutador principal
@@ -118,7 +118,7 @@ Uso del sistema de autenticación de Django ampliado con formularios personaliza
 ```bash
 # 1. Clonar el repositorio
 git clone <url-del-repositorio>
-cd gestion_escolar
+cd EduManager  # (Omitir si ya estás dentro de la carpeta)
 
 # 2. Crear entorno virtual
 python -m venv venv
